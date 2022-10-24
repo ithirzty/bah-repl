@@ -1,0 +1,127 @@
+#include "lexer.bah" //Bah compiler's lexer
+
+//ASCII terminal sequences
+const asciiEscape = "\033["
+const asciiReset = "\033[m"
+const asciiBold = "\033[1m"
+const asciiUnderline = "\033[4m"
+
+//Used to set a rgb text color in the terminal
+rgbColor(r int, g int, b int) cpstring {
+    return asciiEscape+"38;2;"+intToStr(r)+";"+intToStr(g)+";"+intToStr(b)+"m"
+}
+
+//Used for appending a cpstring to an array
+appendStr(a []char, b cpstring) uint32 {
+    i=0; for b[i] != null, i++ {
+        a[len(a)] = b[i]
+    }
+    return i
+}
+
+//Because of the 'else if in' bug 
+inArrStr(s cpstring, arr []cpstring) bool {
+    return s in arr
+}
+
+//Primitives bah types for syntax highlighting
+bahTypes = []cpstring{
+    "int", "uint", "int32", "uint32", 
+    "cpstring", "char",
+    "float", "float32",
+    "ptr"
+}
+
+//Special values that are not variables for syntax highlighting
+bahSpecialVals = []cpstring {
+    "null"
+}
+
+//Bah keywords for syntax highlighting
+bahKeywords = []cpstring{"if", "else", "for", "struct", "const", "return", "extend", "new", "break", "continue", "default", "switch", "case", "while", "typedef", "function", "async", "in", "chan", "map", "buffer"}
+
+//Default colors (from bcat)
+defaultColor = rgbColor(218, 215, 218)
+bgColor = rgbColor(33,33,33)
+varColor = rgbColor(110,206,208)
+fnColor = rgbColor(233,228,138)
+typeColor = rgbColor(76,175,128)
+strColor = rgbColor(248,135,80)
+numColor = rgbColor(127,208,149)
+kwColor = rgbColor(206,142,204)
+hashColor = rgbColor(110,110,110)
+constColor = rgbColor(33,143,236)
+commColor = rgbColor(84,155,54)
+lineColor = rgbColor(90, 50, 50)
+
+//Text markup buffer
+buff = []char
+
+//Returns colored text from bah code.
+syntaxHighlight(s []char) cpstring {
+    clear(buff)
+    tokens = lexer(arrAsStr(s), len(s))
+
+    if len(s) > 0 && (s[0] == '.' || s[0] == '$') {
+        appendStr(buff, lineColor)
+        i=0; for i < len(s), i++ {
+            buff[len(buff)] = s[i]
+        }
+        appendStr(buff, asciiReset)
+        return arrToStr(buff)
+    }
+
+    i=0; for i < len(s), i++ {
+        found = false
+        k=0; for k < len(tokens), k++ {
+            if tokens[k].pos == i {
+                found = true
+                break
+            } else if tokens[k].pos > i {
+                break
+            }
+        }
+
+        if s[i] == '/' && i+1 < len(s) && s[i+1] == '/' {
+            appendStr(buff, commColor)
+            appendStr(buff, arrAsStr(s[i:]))
+            break
+        }
+
+        if found == true {
+            color = ""
+            if tokens[k].type == TOKEN_TYPE_VAR {
+                if k+1 < len(tokens) && tokens[k+1].cont == "(" {
+                    color = fnColor
+                } else if inArrStr(tokens[k].ogCont, bahTypes) {
+                    color = typeColor
+                } else if inArrStr(tokens[k].ogCont, bahSpecialVals) {
+                    color = constColor
+                } else if inArrStr(tokens[k].ogCont, bahKeywords) {
+                    color = kwColor
+                } else {
+                    color = varColor
+                }
+            } else if tokens[k].type == TOKEN_TYPE_BOOL {
+                color = constColor
+            } else if tokens[k].type == TOKEN_TYPE_STR && tokens[k].line == tokens[k].begLine {
+                color = strColor
+            } else if tokens[k].type == TOKEN_TYPE_INT || tokens[k].type == TOKEN_TYPE_FLOAT {
+                color = numColor
+            } else if tokens[k].type == TOKEN_TYPE_CAST {
+                color = typeColor
+            } else if tokens[k].type == TOKEN_TYPE_KEYWORD && tokens[k].ogCont[0] == '#' {
+                color = hashColor
+            }
+            i += strlen(tokens[k].ogCont) - 1
+            appendStr(buff, color+tokens[k].ogCont+defaultColor)
+            continue
+        }
+
+        buff[len(buff)] = s[i]
+    }
+
+    appendStr(buff, asciiReset)
+
+    return arrToStr(buff)
+}

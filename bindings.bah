@@ -1,0 +1,8 @@
+#include "<dlfcn.h>"
+
+#cLib "ldl"
+
+#define! dlopen(s cpstring, m int) ptr
+#define! dlsym(so ptr, sym ptr) ptr
+#define! dlerror() cpstring
+#define! dlclose(so ptr)

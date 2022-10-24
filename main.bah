@@ -1,0 +1,118 @@
+#import "iostream.bah"
+#import "string.bah"
+#import "path.bah"
+#import "exec.bah"
+
+#include "colors.bah"   //syntax highlighting
+#include "terminal.bah" //terminal handling
+#include "bindings.bah" // lib dl bindings
+
+isFuncDecl = false //is current command a function declaration
+currFuncName = "" //not used for now
+cmdRaw = []char //current command buffer
+
+#include "io.bah" //io operations (compiling)
+
+main(args []cpstring) int {
+
+    mkdir("./tmp", 0777)
+
+    currStr = string("")
+    nbEncls = 0
+
+    i=0; for 1==1, i++ {
+        info = "... > "
+        if currStr.length == 0 {
+            isFuncDecl = false
+            info = "$"+intToStr(i)+" > "
+        }
+        
+        cmd = string(getInputLine(info))
+
+
+        j=0; for j < cmd.length, j++ {
+            if cmd.charAt(j) == '{' || cmd.charAt(j) == '(' || cmd.charAt(j) == '[' {
+                if cmd.charAt(j) == '{' {
+                    isFuncDecl = true
+                }
+                nbEncls++
+            } else if cmd.charAt(j) == '}' || cmd.charAt(j) == ')' || cmd.charAt(j) == ']' {
+                nbEncls--
+            }
+        }
+
+        if nbEncls != 0 {
+            i--
+            currStr.append(cmd.str()+"\n")
+            continue
+        } else if currStr.length > 0 {
+            cmd.prepend(currStr.str())
+            currStr.set("")
+        }
+        
+        if cmd.str() == ".q" || cmd.str() == ".quit" {
+            break
+        }
+
+        if cmd.hasPrefix(".i ") || cmd.hasPrefix(".include ") {
+            parts = splitString(cmd, " ")
+            f = parts[1]
+            includes += "#include \"" + f.str() + "\"\n"
+        } else if cmd.str()[0] == '$' {
+            cmd.trimLeft(1)
+            id = strToInt(cmd.str())
+            if id < 0 && id >= i {
+                continue
+            }
+            compileCmd("fn_"+intToStr(id)+"()", i)
+        } else if isVarDecl(cmd) {
+            isFuncDecl = false
+            parts = string(splitStringBefore(cmd, "="))
+            name = trim(parts)
+            if name.count(".") {
+                name = string(splitStringBefore(name, "."))
+            }
+            if name.count("[") {
+                name = string(splitStringBefore(name, "["))
+            }
+
+            if name.hasPrefix("&") {
+                name.trimLeft(1)
+            }
+
+            j=0; for j < len(symsToSave), j++ {
+                v = symsToSave[j]
+                if v.name == name.str() {
+                    compileCmd(cmd.str(), i)
+                    break
+                }
+            }
+            if j < len(symsToSave) {
+                continue
+            }
+
+            symsToSave[len(symsToSave)] = new symMapper {
+                name: name.str()
+                p: null
+            }
+            currFile += cmd.str()+"\n"
+            compileCmd(cmd.str(), i)
+        } else {
+            compileCmd(cmd.str(), i)
+        }
+
+
+
+    }
+
+    garbageFiles = listFiles("./tmp")
+    i=0; for i < len(garbageFiles), i++ {
+        removeFile("./tmp/"+garbageFiles[i])
+    }
+
+    println("Good bye!")
+
+
+
+    return 0
+}

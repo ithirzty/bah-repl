@@ -1,0 +1,198 @@
+#import "iostream.bah"
+#import "string.bah"
+
+//C bindings
+
+#include "<sys/ioctl.h>"
+
+struct! winsize {
+    ws_row: int
+    ws_col: int
+}
+
+#define! ioctl(fd int, d int, w ptr)
+
+#include "<termios.h>"
+
+struct! termios {
+    c_iflag: ptr
+    c_oflag: ptr
+    c_cflag: ptr
+    c_lflag: ptr
+    c_cc: ptr
+}
+
+#define! tcgetattr(fd int, attr termios*)
+#define! tcsetattr(fd int, opta ptr, attr termios*)
+
+#define! cfmakeraw(t termios*)
+#define! cfmakesane(t termios*)
+
+#define! getchar() char
+
+//For more complex terminal handling
+struct term {
+    origTermios: termios //old terminal setting to remove raw mode
+    
+    //size
+    width: int
+    height: int
+
+    //cursor pos
+    x: int
+    y: int
+    posSet: bool = false
+
+    //color
+    fg: cpstring
+    bg: cpstring
+    colorSet: bool = false
+
+    //Set cursor position on next print
+    setPos(x int, y int) {
+        this.x = x; this.y = y
+        this.posSet = false
+    }
+
+    //Set text color
+    setColor(fg cpstring, bg cpstring) {
+        this.fg = fg; this.bg = bg
+        this.colorSet = false
+    }
+
+    //Reset color
+    resetColor() {
+        print("\033[0m")
+        this.colorSet = true
+    }
+
+    //Force cursor position now
+    forcePos(x int, y int) {
+        this.x = x; this.y = y
+        print("\033["+intToStr(this.y+1)+";"+intToStr(this.x+1)+"H")
+        this.posSet = true
+    }
+
+    //Print text
+    print(s cpstring) {
+        if this.posSet == false {
+            s = "\033["+intToStr(this.y+1)+";"+intToStr(this.x+1)+"H"+s
+            this.posSet = true
+        }
+        if this.colorSet == false {
+            s = "\033["+this.bg+"m\033["+this.fg+"m" + s
+            this.colorSet = true
+        }
+
+        print(s)
+    }
+
+    //Clear terminal
+    clear() {
+        print("\033c")
+    }
+
+    //Fetch size
+    getSize() {
+        w = winsize{}
+        ioctl(1, noCheck(TIOCGWINSZ), &w)
+        this.width = w.ws_col
+        this.height = w.ws_row
+    }
+
+    //Set raw/sane mode
+    mode(m int) {
+        if m == 0 {
+            attr termios
+            tcgetattr(0, &attr)
+            cfmakeraw(&attr)
+            tcsetattr(0, noCheck(TCSANOW), &attr)
+        } else {
+            attr termios
+            tcgetattr(0, &attr)
+            cfmakeraw(&attr)
+            tcsetattr(0, noCheck(TCSAFLUSH), &this.origTermios)
+        }
+    }
+
+}
+
+//Set text color (old way)
+setColor(color cpstring, s cpstring) cpstring {
+    return "\033["+color+"m" + s + "\033[0m"
+}
+
+//Make terminal object
+term() term* {
+    t = new term
+    t.getSize()
+    attr termios
+    tcgetattr(0, &attr)
+    t.origTermios = attr
+    cfmakeraw(&attr)
+    tcsetattr(0, noCheck(TCSANOW), &attr)
+    return t
+}
+
+//Key sequences
+K_escape = []char{<char>27}
+K_arr_left = []char{<char>27, <char>91, <char>68}
+K_arr_top = []char{<char>27, <char>91, <char>65}
+K_arr_right = []char{<char>27, <char>91, <char>67}
+K_arr_bottom = []char{<char>27, <char>91, <char>66}
+K_ctrl_c = []char{<char>3}
+K_ctrl_v = []char{<char>22}
+K_ctrl_x = []char{<char>24}
+K_ctrl_s = []char{<char>19}
+K_ctrl_o = []char{<char>15}
+K_ctrl_f = []char{<char>6}
+K_ctrl_q = []char{<char>17}
+K_ctrl_w = []char{<char>23}
+K_ctrl_g = []char{<char>7}
+K_del = []char{<char>127}
+K_back_del = []char{<char>27, <char>91, <char>51, <char>126}
+K_ctrl_del = []char{<char>8}
+K_ctrl_back_del = []char{<char>27, <char>91, <char>51, <char>59, <char>53, <char>126}
+K_enter = []char{<char>13}
+K_tab = []char{<char>9}
+K_ctrl_arr_left = []char{<char>27, <char>91, <char>49, <char>59, <char>53, <char>68}
+K_ctrl_arr_right = []char{<char>27, <char>91, <char>49, <char>59, <char>53, <char>67}
+K_ctrl_arr_top = []char{<char>27, <char>91, <char>49, <char>59, <char>53, <char>65}
+K_ctrl_arr_bottom = []char{<char>27, <char>91, <char>49, <char>59, <char>53, <char>66}
+K_ctrl_r = []char{<char>18}
+K_shift_arr_left = []char{<char>27, <char>91, <char>49, <char>59, <char>50, <char>68}
+K_shift_arr_right = []char{<char>27, <char>91, <char>49, <char>59, <char>50, <char>67}
+K_shift_arr_top = []char{<char>27, <char>91, <char>49, <char>59, <char>50, <char>65}
+K_shift_arr_bottom = []char{<char>27, <char>91, <char>49, <char>59, <char>50, <char>66}
+K_alt_arr_left = []char{<char>27, <char>91, <char>49, <char>59, <char>51, <char>68}
+K_alt_arr_right = []char{<char>27, <char>91, <char>49, <char>59, <char>51, <char>67}
+K_alt_r = []char{<char>27, <char>114}
+
+
+//Input buffer
+term_inp_arr__ = []char
+allocTermInpArr() bool {
+    allocateArray(term_inp_arr__, 8)
+    return true
+}
+term_inp_arr__is_ok = allocTermInpArr()
+
+//Read key sequence
+inp() []char {
+    l = read(<ptr>0,cArr(term_inp_arr__),8)
+    noCheck(term_inp_arr__->length = l)
+    return term_inp_arr__
+}
+
+//Test key sequence against known sequences
+testKS(ks []char, test []char) bool {
+    if len(ks) != len(test) {
+        return false
+    }
+    i=0; for i < len(ks), i++ {
+        if test[i] != ks[i] {
+            return false
+        }
+    }
+    return true
+}

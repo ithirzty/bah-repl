@@ -1,0 +1,117 @@
+#include "iostream.bah"
+#include "string.bah"
+#include "reflect.bah"
+
+intTypes = []cpstring{
+    "int", "int32", "uint", "uint32", "byte"
+}
+
+floatTypes = []cpstring{
+    "float", "float32"
+}
+
+const ASCII_RESET = "\033[0m"
+const ASCII_YELLOW = "\033[33m"
+const ASCII_BLUE = "\033[36m"
+const ASCII_GREEN = "\033[32m"
+const ASCII_MAGENTA = "\033[35m"
+const ASCII_GREY = "\033[2m"
+
+//Not used for now
+BAH_repl_print_value(e reflectElement, tabs uint, minimal bool) {
+    tab = ""
+    i=0; for i < tabs, i++ {
+        tab += "\t"
+    }
+
+    for e.name[0] == '&' {
+        e.name = e.name[1:]
+    }
+
+    rt = e.type[:strlen(e.type)-1]
+
+    if minimal == false {
+        print(tab+ASCII_BLUE+e.name+ASCII_RESET+" "+ASCII_GREEN+rt+ASCII_RESET+": "+ASCII_MAGENTA)
+    } else {
+        print(tab+ASCII_BLUE+e.name+ASCII_RESET+": "+ASCII_MAGENTA)
+    }
+    
+    t = string(e.type)
+    for t.count("*") > 1 {
+        t.trimRight(1)
+        v ptr* = e.value
+        e.value = *v
+        e.type = t.str()
+    }
+
+    if e.isStruct == true {
+        println(ASCII_RESET+"{")
+        i=0; for i < len(e.structLayout), i++ {
+            m = e.structLayout[i]
+            m.type += "*"
+            m.value = m.calculateOffset(e.value)
+            BAH_repl_print_value(m, tabs+1, false)
+        }
+        println(tab+"}"+ASCII_RESET)
+        return
+    }
+    
+    if e.isArray == true {
+        println(ASCII_RESET+"{")
+        arrp ptr* = e.value
+        arr = *arrp
+        base = cArr(arr)
+        l = len(arr)
+        ae = e.arrayElem
+        i=0; for i < l, i++ {
+            m = *ae
+            m.name = "["+intToStr(i)+"]"
+            m.value = <ptr>(<int>base + m.size * i)
+            BAH_repl_print_value(m, tabs+1, true)
+        }
+        println(tab+"}"+ASCII_RESET)
+        return
+    }
+    
+    //remove ast
+    e.type = e.type[:strlen(e.type)-1]
+    
+    if e.type in intTypes {
+        j int* = e.value
+        println(intToStr(*j)+ASCII_RESET)
+        return
+    }
+
+    if e.type in floatTypes {
+        f float* = e.value
+        println(floatToStr(*f)+ASCII_RESET)
+        return
+    }
+
+    if e.type == "char" {
+        c char* = e.value
+        println("'"+charToString(*c)+"'"+ASCII_RESET)
+        return
+    }
+
+    if e.type == "cpstring" {
+        s cpstring* = e.value
+        println("'"+*s+"'"+ASCII_RESET)
+        return
+    }
+
+    if e.type == "bool" {
+        b bool* = e.value
+        if *b == true {
+            println("true"+ASCII_RESET)
+        } else {
+            println("false"+ASCII_RESET)
+        }
+        return
+    }
+
+    //more types later :)
+
+    println("hum"+ASCII_RESET)
+    
+}

@@ -1,0 +1,213 @@
+//The terminal (for advanced handling such as setting cursor pos)
+t = term()
+
+//Console text history (arrow up)
+history = []cpstring
+
+//Wrapper to a shared object for counting references (with symbols)
+//to be able to close them and save ressources.
+struct sharedObject {
+    refs: int = 0
+    path: cpstring
+    so: ptr
+}
+
+//List of all shared object used by the program
+so = []sharedObject*
+
+//Current text output to be compiled
+currFile = ""
+
+//To map a name to a symbol (variable)
+struct symMapper {
+    name: cpstring
+    scope: sharedObject*
+    p: ptr*
+}
+
+symsToSave = []symMapper* //all variables
+
+includes = "#include \"../runtime.bah\"\n" //files included
+
+//Used for compiling a command
+compileCmd(code cpstring, id int) {
+    fs = fileStream{}
+    fs.open("./tmp/tmp.bah", "w")
+    
+    if isFuncDecl == false {
+        code = "fn_"+intToStr(id)+"() {
+            "+code+"
+        }\n"
+    }
+    
+    currFile += code
+
+    fs.writeFile("
+    "+includes+"
+    #cLib \"fpic\"
+    main(args []cpstring) int {
+        return 0
+    }
+    "+currFile+"
+    
+    ")
+    fs.close()
+
+    command("bah ./tmp/tmp.bah -c").runBytes()
+    print(".")
+
+    command("gcc -I \"/opt/bah/libs/linux/include/\" -L \"/opt/bah/libs/linux/\" -w ./tmp/tmp.c -c -O1 -fpic -o ./tmp/tmp.o").runBytes()
+    print(".")
+    
+    command("gcc ./tmp/tmp.o -lgc -o ./tmp/tmp_"+intToStr(id)+".so -shared").runBytes()
+    print(".\r")
+        i=0; for i < len(so), i++ {
+            cso = so[i]
+            if cso.refs == 0 {
+                dlclose(cso.so)
+                removeFile(cso.path)
+                delete(so, i)
+                i--
+            }
+        }
+        
+        currSo = new sharedObject {
+            refs: 0
+            so: dlopen(absPath("./tmp/tmp_"+intToStr(id)+".so"), noCheck(RTLD_LAZY | RTLD_GLOBAL))
+            path: "./tmp/tmp_"+intToStr(id)+".so"
+        }
+        so[len(so)] = currSo
+    if so[len(so)-1].so == null {
+        delete(so, len(so)-1)
+        println("ERROR: loading binary file.")
+        return
+    }
+    
+    i=0; for i < len(symsToSave), i++ {
+        sts = symsToSave[i]
+        if sts.p == null {
+            sts.p = dlsym(so[len(so)-1].so, sts.name)
+            sts.scope = currSo
+            currSo.refs += 1
+            continue 
+        }
+        np ptr* = dlsym(so[len(so)-1].so, sts.name)
+        op = sts.p
+        *np = *op
+        sts.scope.refs -= 1
+        sts.p = np
+        sts.scope = currSo
+        currSo.refs += 1
+    }
+
+    print("   \r")
+    if isFuncDecl == false {
+        sym function() = dlsym(so[len(so)-1].so, "fn_"+intToStr(id))
+
+        if sym == null {
+            println("ERROR: compilling...")
+            currFile = currFile[:strlen(currFile) - strlen(code)]
+            return
+        }
+
+        sym()
+    }
+    print("\n")
+
+}
+
+//Used for removing spaces at begining and end of a string
+trim(s string) string {
+    i=0; for i < s.length, i++ {
+        if isSpace(s.charAt(i)) == false {
+            if i > 0 {
+                s.trimLeft(i)
+            }
+            break
+        }
+    }
+
+    i=0; for i < s.length, i++ {
+        if isSpace(s.charAt(s.length - i - 1)) == false {
+            if i > 0 {
+                s.trimRight(i)
+            }
+            break
+        }
+    }
+
+    return s
+}
+
+//Used instead of stdinput() to be able to have syntax highlighting
+getInputLine(info cpstring) cpstring {
+    clear(cmdRaw)
+    t.mode(0)
+    padding = ""
+    l = strlen(info)
+    historyIndex = len(history)-1
+    pos = 0
+    t.forcePos(0, t.height-1)
+    for 1==1 {
+        print("\r"+info+syntaxHighlight(cmdRaw)+padding)
+        t.forcePos(l + pos, t.height-1)
+        k = inp()
+        if testKS(k, K_enter) {
+            print("\r\n")
+            break
+        } else if testKS(k, K_del) {
+            if len(cmdRaw) == 0 || pos == 0 {
+                continue
+            }
+            padding += " "
+            delete(cmdRaw, pos-1)
+            pos--
+        } else if testKS(k, K_arr_top) || testKS(k, K_arr_bottom) {
+            if testKS(k, K_arr_top) && historyIndex > 0 {
+                historyIndex--
+            } else if testKS(k, K_arr_bottom) && historyIndex < len(history)-1 {
+                historyIndex++
+            }
+            if len(history) == 0 {
+                continue
+            }
+            cmdRaw = strToArr(history[historyIndex])
+
+        } else if testKS(k, K_arr_left) {
+            if pos > 0 {
+                pos--
+            }
+        } else if testKS(k, K_arr_right) {
+            if pos < len(cmdRaw) {
+                pos++
+            }
+        } else {
+            if pos == len(cmdRaw) {
+                cmdRaw[len(cmdRaw)] = k[0]
+            } else {
+                i=len(cmdRaw); for i >= pos, i-- {
+                    cmdRaw[i] = cmdRaw[i-1]
+                }
+                cmdRaw[pos] = k[0]
+            }
+            pos++
+        }
+    }
+    t.mode(1)
+    history[len(history)] = arrToStr(cmdRaw)
+    return arrToStr(cmdRaw)
+}
+
+//Used to dertermine if a command is a variable declaration
+isVarDecl(s string) bool {
+    i=0; for i < s.length, i++ {
+        c = s.charAt(i)
+        if c == <char>10 {
+            return false
+        }
+        if c == '=' {
+            return true
+        }
+    }
+    return false
+}
