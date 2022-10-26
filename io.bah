@@ -55,8 +55,15 @@ compileCmd(code cpstring, id int) {
     ")
     fs.close()
 
-    command("bah ./tmp/tmp.bah -c").runBytes()
+    bc = command("bah ./tmp/tmp.bah -c")
+    bc.runBytes()
     print(".")
+
+    if bc.status != 0 {
+        println("ERROR: compilling (1)...")
+        currFile = currFile[:strlen(currFile) - strlen(code)-1]
+        return
+    }
 
     command("gcc -I \"/opt/bah/libs/linux/include/\" -L \"/opt/bah/libs/linux/\" -w ./tmp/tmp.c -c -O0 -fpic -o ./tmp/tmp.o").runBytes()
     print(".")
@@ -107,8 +114,8 @@ compileCmd(code cpstring, id int) {
         sym function() = dlsym(so[len(so)-1].so, "fn_"+intToStr(id))
 
         if sym == null {
-            println("ERROR: compilling...")
-            currFile = currFile[:strlen(currFile) - strlen(code)]
+            println("ERROR: compilling (2)...")
+            currFile = currFile[:strlen(currFile) - strlen(code)-1]
             return
         }
 
