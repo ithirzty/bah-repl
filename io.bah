@@ -153,13 +153,23 @@ getInputLine(info cpstring) cpstring {
     clear(cmdRaw)
     t.mode(0)
     padding = ""
+    maxL = 0
+    paddingOffset = 0
     l = strlen(info)
     historyIndex = len(history)
     pos = 0
+    vertPos = 0
     t.forcePos(0, t.height-1)
     for 1==1 {
+        if len(cmdRaw) > maxL {
+            maxL = len(cmdRaw)
+        }
+        padding = ""
+        j=0; for j < maxL+paddingOffset, j++ {
+            padding += " "
+        }
         print("\r"+lineColor+info+asciiReset+syntaxHighlight(cmdRaw)+padding)
-        t.forcePos(l + pos, t.height-1)
+        t.forcePos(l + pos, t.height-1-vertPos)
         k = inp()
         if testKS(k, K_enter) {
             print("\r\n")
@@ -168,11 +178,17 @@ getInputLine(info cpstring) cpstring {
             if len(cmdRaw) == 0 || pos == 0 {
                 continue
             }
+            paddingOffset++
             padding += " "
             delete(cmdRaw, pos-1)
             pos--
         } else if testKS(k, K_arr_top) || testKS(k, K_arr_bottom) {
             if testKS(k, K_arr_top) && historyIndex > 0 {
+                if multiLine == true {
+                    vertPos++
+                    currStr.trimRight(1 + strlen(history[historyIndex-1]))
+                }
+                
                 historyIndex--
             } else if testKS(k, K_arr_bottom) && historyIndex+1 < len(history) {
                 historyIndex++
@@ -201,6 +217,9 @@ getInputLine(info cpstring) cpstring {
                 cmdRaw[pos] = k[0]
             }
             pos++
+            if paddingOffset > 0 {
+                paddingOffset--
+            }
         }
     }
     t.mode(1)

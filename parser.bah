@@ -7,13 +7,6 @@ parseCmd(s string*, id int) {
         return
     }
 
-    i=0; for i < len(tokens), i++ {
-        if tokens[i].ogCont == ";" {
-            println("[error]: multi-line operations are not supported.")
-            return
-        }
-    }
-
     if tokens[0].ogCont == "." {
         if len(tokens) < 2 {
             return
@@ -146,6 +139,12 @@ parseCmd(s string*, id int) {
         }
 
         if varDecl == true {
+            i=0; for i < len(tokens), i++ {
+                if tokens[i].ogCont == ";" {
+                    println("[error]: multi-line operations are not supported.")
+                    return
+                }
+            }
             vName = tokens[0].ogCont
             if vName[0] == '&' {
                 vName = vName[1:]

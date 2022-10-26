@@ -11,6 +11,8 @@ globalID int*
 #include "bindings.bah" // lib dl bindings
 
 cmdRaw = []char //current command buffer
+currStr = string("")
+multiLine = false
 currentFile = []cpstring //for saving
 currentFileName = ""
 
@@ -21,7 +23,6 @@ main(args []cpstring) int {
 
     mkdir("./tmp", 0777)
 
-    currStr = string("")
     nbEncls = 0
 
     i=0
@@ -30,7 +31,7 @@ main(args []cpstring) int {
 
     for 1==1, i++ {
         info = "... > "
-        if currStr.length == 0 {
+        if multiLine == false {
             isFuncDecl = false
             info = "$"+intToStr(i)+" > "
         }
@@ -45,13 +46,16 @@ main(args []cpstring) int {
             }
         }
 
-        if nbEncls != 0 {
+        if nbEncls > 0 {
             i--
+            multiLine = true
             currStr.append(cmd.str()+"\n")
             continue
-        } else if currStr.length > 0 {
+        } else if multiLine == true {
+            nbEncls = 0
             cmd.prepend(currStr.str())
             currStr.set("")
+            multiLine = false
         }
         
         if cmd.str() == ".q" || cmd.str() == ".quit" {
