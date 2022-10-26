@@ -123,7 +123,7 @@ compileCmd(code cpstring, id int) {
 
         sym()
     }
-    // print("\n")
+    print("\n")
 
 }
 
@@ -239,6 +239,9 @@ getInputLine(info cpstring) cpstring {
         s = arrToStr(cmdRaw[i])
         history[len(history)] = s
         r += s
+        if i+1 < len(cmdRaw) {
+            r += "\n"
+        }
     }
     return r 
 }
