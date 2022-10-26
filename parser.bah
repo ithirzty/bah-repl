@@ -81,7 +81,7 @@ parseCmd(s string*, id int) {
 
             //reset state
             currFile = ""
-            includes = "#include \"../runtime.bah\"\n"
+            includes = baseIncludes
             garbageFiles = listFiles("./tmp")
             i=0; for i < len(garbageFiles), i++ {
                 removeFile("./tmp/"+garbageFiles[i])
@@ -176,4 +176,36 @@ parseCmd(s string*, id int) {
 
     compileCmd(s.str(), id)
 
+}
+
+countEnclaves(s [][]char) int {
+    nbEncl = 0
+    r = ""
+    j=0; for j < len(cmdRaw), j++ {
+        toks = lexer(arrAsStr(cmdRaw[j]), len(cmdRaw[j]))
+        i=0; for i < len(toks), i++ {
+            if toks[i].cont == "(" || toks[i].cont == "{" || toks[i].cont == "[" {
+                nbEncl++
+            } else if toks[i].cont == ")" || toks[i].cont == "}" || toks[i].cont == "]" {
+                nbEncl--
+            }
+        }
+    }
+    return nbEncl
+}
+
+countFrom(s [][]char, s1 cpstring, s2 cpstring) int {
+    nbEncl = 0
+    r = ""
+    j=0; for j < len(cmdRaw), j++ {
+        toks = lexer(arrAsStr(cmdRaw[j]), len(cmdRaw[j]))
+        i=0; for i < len(toks), i++ {
+            if toks[i].cont == s1 {
+                nbEncl++
+            } else if toks[i].cont == s2 {
+                nbEncl--
+            }
+        }
+    }
+    return nbEncl
 }

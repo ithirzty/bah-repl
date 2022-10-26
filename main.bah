@@ -10,8 +10,7 @@ globalID int*
 #include "terminal.bah" //terminal handling
 #include "bindings.bah" // lib dl bindings
 
-cmdRaw = []char //current command buffer
-currStr = string("")
+cmdRaw = [][]char //current command buffer
 multiLine = false
 currentFile = []cpstring //for saving
 currentFileName = ""
@@ -37,26 +36,6 @@ main(args []cpstring) int {
         }
         
         cmd = string(getInputLine(info))
-
-        j=0; for j < cmd.length, j++ {
-            if cmd.charAt(j) == '{' || cmd.charAt(j) == '(' || cmd.charAt(j) == '[' {
-                nbEncls++
-            } else if cmd.charAt(j) == '}' || cmd.charAt(j) == ')' || cmd.charAt(j) == ']' {
-                nbEncls--
-            }
-        }
-
-        if nbEncls > 0 {
-            i--
-            multiLine = true
-            currStr.append(cmd.str()+"\n")
-            continue
-        } else if multiLine == true {
-            nbEncls = 0
-            cmd.prepend(currStr.str())
-            currStr.set("")
-            multiLine = false
-        }
         
         if cmd.str() == ".q" || cmd.str() == ".quit" {
             break

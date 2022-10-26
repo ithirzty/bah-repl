@@ -27,7 +27,9 @@ struct symMapper {
 
 symsToSave = []symMapper* //all variables
 
-includes = "#include \"../runtime.bah\"\n" //files included
+const baseIncludes = "#include \"iostream.bah\"\n#include \"string.bah\"\n"
+
+includes = baseIncludes //files included
 
 isFuncDecl = false //is current command a function declaration
 currFuncName = "" //not used for now
@@ -125,32 +127,13 @@ compileCmd(code cpstring, id int) {
 
 }
 
-//Used for removing spaces at begining and end of a string
-trim(s string) string {
-    i=0; for i < s.length, i++ {
-        if isSpace(s.charAt(i)) == false {
-            if i > 0 {
-                s.trimLeft(i)
-            }
-            break
-        }
-    }
-
-    i=0; for i < s.length, i++ {
-        if isSpace(s.charAt(s.length - i - 1)) == false {
-            if i > 0 {
-                s.trimRight(i)
-            }
-            break
-        }
-    }
-
-    return s
-}
+#define countEnclaves(s [][]char) int
+#define countFrom(s [][]char, s1 cpstring, s2 cpstring) int
 
 //Used instead of stdinput() to be able to have syntax highlighting
 getInputLine(info cpstring) cpstring {
     clear(cmdRaw)
+    cmdRaw[0] = []char
     t.mode(0)
     padding = ""
     maxL = 0
@@ -161,60 +144,88 @@ getInputLine(info cpstring) cpstring {
     vertPos = 0
     t.forcePos(0, t.height-1)
     for 1==1 {
-        if len(cmdRaw) > maxL {
-            maxL = len(cmdRaw)
+        if len(cmdRaw[vertPos]) > maxL {
+            maxL = len(cmdRaw[vertPos])
         }
         padding = ""
         j=0; for j < maxL+paddingOffset, j++ {
             padding += " "
         }
-        print("\r"+lineColor+info+asciiReset+syntaxHighlight(cmdRaw)+padding)
-        t.forcePos(l + pos, t.height-1-vertPos)
+        t.forcePos(l, t.height - len(cmdRaw)+vertPos)
+        print("\r"+lineColor+info+asciiReset+syntaxHighlight(cmdRaw[vertPos])+padding)
+        t.forcePos(l + pos, t.height - len(cmdRaw)+vertPos)
         k = inp()
         if testKS(k, K_enter) {
+            nbEncl = countEnclaves(cmdRaw)
             print("\r\n")
-            break
+            if nbEncl == 0 {
+                break
+            } else {
+                vertPos++
+                if cmdRaw[vertPos] == null {
+                    cmdRaw[vertPos] = []char
+                    pos = 0
+                }
+            }
+            
         } else if testKS(k, K_del) {
             if len(cmdRaw) == 0 || pos == 0 {
                 continue
             }
             paddingOffset++
             padding += " "
-            delete(cmdRaw, pos-1)
+            delete(cmdRaw[vertPos], pos-1)
             pos--
         } else if testKS(k, K_arr_top) || testKS(k, K_arr_bottom) {
-            if testKS(k, K_arr_top) && historyIndex > 0 {
-                if multiLine == true {
-                    vertPos++
-                    currStr.trimRight(1 + strlen(history[historyIndex-1]))
+            if len(cmdRaw) == 1 {
+                if testKS(k, K_arr_top) && historyIndex > 0 {
+                    if historyIndex == len(history) && len(cmdRaw[0]) > 0 {
+                        history[len(history)] = arrToStr(cmdRaw[0])
+                    }
+                    historyIndex--
+                    cmdRaw[0] = strToArr(history[historyIndex])
+                } else if testKS(k, K_arr_bottom)&& historyIndex < len(history) {
+                    historyIndex++
+                    cmdRaw[0] = strToArr(history[historyIndex])
                 }
-                
-                historyIndex--
-            } else if testKS(k, K_arr_bottom) && historyIndex+1 < len(history) {
-                historyIndex++
+            } else {
+                if testKS(k, K_arr_top) && vertPos > 0 {
+                    vertPos--
+                } else if testKS(k, K_arr_bottom) && vertPos+1 < len(cmdRaw) {
+                    vertPos++
+                }
+                if pos > len(cmdRaw[vertPos]) {
+                    pos = len(cmdRaw[vertPos])
+                }
             }
-            if len(history) == 0 {
-                continue
-            }
-            cmdRaw = strToArr(history[historyIndex])
-            pos = len(cmdRaw)
 
         } else if testKS(k, K_arr_left) {
             if pos > 0 {
                 pos--
+            } else if vertPos > 0 {
+                vertPos--
+                pos = len(cmdRaw[vertPos])
             }
         } else if testKS(k, K_arr_right) {
-            if pos < len(cmdRaw) {
+            if pos < len(cmdRaw[vertPos]) {
                 pos++
+            } else if vertPos+1 < len(cmdRaw) {
+                vertPos++
+                pos = 0
             }
         } else {
-            if pos == len(cmdRaw) {
-                cmdRaw[len(cmdRaw)] = k[0]
+            if cmdRaw[vertPos] == null {
+                cmdRaw[vertPos] = []char
+            }
+            if pos == len(cmdRaw[vertPos]) {
+                cl = cmdRaw[vertPos]
+                cl[len(cl)] = k[0]
             } else {
-                i=len(cmdRaw); for i >= pos, i-- {
-                    cmdRaw[i] = cmdRaw[i-1]
+                cl = cmdRaw[vertPos]
+                i=len(cl); for i >= pos, i-- {
+                    cl[i] = cl[i-1]
                 }
-                cmdRaw[pos] = k[0]
+                cl[pos] = k[0]
             }
             pos++
             if paddingOffset > 0 {
@@ -223,6 +234,11 @@ getInputLine(info cpstring) cpstring {
         }
     }
     t.mode(1)
-    history[len(history)] = arrToStr(cmdRaw)
-    return arrToStr(cmdRaw)
+    r = ""
+    i=0; for i < len(cmdRaw), i++ {
+        s = arrToStr(cmdRaw[i])
+        history[len(history)] = s
+        r += s
+    }
+    return r 
 }
