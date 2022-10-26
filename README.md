@@ -25,4 +25,6 @@ bah main.bah -d
 ## Commands
 - `.include file.bah` (`.i`) to include a library (import is not supported),
 - `.quit` (`.q`) to quit,
+- `.save file.bah` (`.s`) to save a session,
+- `.open file.bah` (`.o`) to open a saved session,
 - `$nb` to redo the nb<sup>th</sup> line.

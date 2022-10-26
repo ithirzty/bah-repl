@@ -78,8 +78,9 @@ syntaxHighlight(s []char) cpstring {
         }
 
         if s[i] == '/' && i+1 < len(s) && s[i+1] == '/' {
-            appendStr(buff, commColor)
+            appendStr(buff, asciiBold + commColor)
             appendStr(buff, arrAsStr(s[i:]))
+            appendStr(buff, asciiReset)
             break
         }
 

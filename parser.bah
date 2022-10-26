@@ -1,4 +1,6 @@
 parseCmd(s string*, id int) {
+    isFuncDecl = false
+    
     tokens = lexer(s.str(), s.length)
 
     if len(tokens) == 0 {
@@ -22,7 +24,91 @@ parseCmd(s string*, id int) {
                 f += tokens[i].ogCont
             }
             includes += "#include \"" + f + "\"\n"
+        } else if tokens[1].ogCont == "s" || tokens[1].ogCont == "save" {
+            currentFile[len(currentFile)-1] = ""
+            if len(tokens) > 2 {
+                f = ""
+                i=2; for i < len(tokens), i++ {
+                    f += tokens[i].ogCont
+                }
+                currentFileName = f
+            }
+
+            if currentFileName == "" {
+                println("[error]: no file name")
+                return
+            }
+
+            fs = fileStream{}
+            fs.open(currentFileName, "w")
+            
+            i=0; for i < len(currentFile), i++ {
+                fs.writeFile(currentFile[i]+"\n")
+            }
+
+            fs.close()
+
+        } else if tokens[1].ogCont == "o" || tokens[1].ogCont == "open" {
+            currentFile[len(currentFile)-1] = ""
+            f = ""
+            i=2; for i < len(tokens), i++ {
+                f += tokens[i].ogCont
+            }
+            if f == "" {
+                println("[error]: no file name")
+                return
+            }
+            currentFileName = f
+
+            fs = fileStream{}
+            fs.open(currentFileName, "r")
+
+            clear(currentFile)
+
+            file = fs.readBytes()
+
+            nbEncls = 0
+            start = 0
+            i=0; for i < len(file), i++ {
+                c = file[i]
+                if c == '{' || c == '(' || c == '[' {
+                    nbEncls++
+                } else if c == '}' || c == ')' || c == ']' {
+                    nbEncls--
+                }
+                
+                if c == <char>10 && nbEncls == 0 {
+                    currentFile[len(currentFile)] = arrToStr(file[start:i])
+                    start = i+1
+                }
+            }
+            
+
+            fs.close()
+
+            //reset state
+            currFile = ""
+            includes = ""
+            garbageFiles = listFiles("./tmp")
+            i=0; for i < len(garbageFiles), i++ {
+                removeFile("./tmp/"+garbageFiles[i])
+            }
+            clear(garbageFiles)
+            clear(symsToSave)
+
+            i=0; for i < len(currentFile), i++ {
+                ls = string(currentFile[i])
+                if ls.length == 0 {
+                    continue
+                }
+                println(lineColor+"$"+intToStr(i)+" > "+asciiReset+syntaxHighlight(strToArr(currentFile[i])))
+                parseCmd(&ls, i)
+            }
+
+            *globalID = i-1
+            
         }
+
         return
     }
 

@@ -114,7 +114,7 @@ compileCmd(code cpstring, id int) {
 
         sym()
     }
-    print("\n")
+    // print("\n")
 
 }
 
@@ -151,7 +151,7 @@ getInputLine(info cpstring) cpstring {
     pos = 0
     t.forcePos(0, t.height-1)
     for 1==1 {
-        print("\r"+info+syntaxHighlight(cmdRaw)+padding)
+        print("\r"+lineColor+info+asciiReset+syntaxHighlight(cmdRaw)+padding)
         t.forcePos(l + pos, t.height-1)
         k = inp()
         if testKS(k, K_enter) {
