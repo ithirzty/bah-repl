@@ -29,6 +29,9 @@ symsToSave = []symMapper* //all variables
 
 includes = "#include \"../runtime.bah\"\n" //files included
 
+isFuncDecl = false //is current command a function declaration
+currFuncName = "" //not used for now
+
 //Used for compiling a command
 compileCmd(code cpstring, id int) {
     fs = fileStream{}
@@ -40,7 +43,7 @@ compileCmd(code cpstring, id int) {
         }\n"
     }
     
-    currFile += code
+    currFile += code+"\n"
 
     fs.writeFile("
     "+includes+"
@@ -196,18 +199,4 @@ getInputLine(info cpstring) cpstring {
     t.mode(1)
     history[len(history)] = arrToStr(cmdRaw)
     return arrToStr(cmdRaw)
-}
-
-//Used to dertermine if a command is a variable declaration
-isVarDecl(s string) bool {
-    i=0; for i < s.length, i++ {
-        c = s.charAt(i)
-        if c == <char>10 {
-            return false
-        }
-        if c == '=' {
-            return true
-        }
-    }
-    return false
 }

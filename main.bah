@@ -3,15 +3,15 @@
 #import "path.bah"
 #import "exec.bah"
 
+#include "lexer.bah"    //Bah compiler's lexer
 #include "colors.bah"   //syntax highlighting
 #include "terminal.bah" //terminal handling
 #include "bindings.bah" // lib dl bindings
 
-isFuncDecl = false //is current command a function declaration
-currFuncName = "" //not used for now
 cmdRaw = []char //current command buffer
 
 #include "io.bah" //io operations (compiling)
+#include "parser.bah"    //Bah compiler's lexer
 
 main(args []cpstring) int {
 
@@ -29,12 +29,8 @@ main(args []cpstring) int {
         
         cmd = string(getInputLine(info))
 
-
         j=0; for j < cmd.length, j++ {
             if cmd.charAt(j) == '{' || cmd.charAt(j) == '(' || cmd.charAt(j) == '[' {
-                if cmd.charAt(j) == '{' {
-                    isFuncDecl = true
-                }
                 nbEncls++
             } else if cmd.charAt(j) == '}' || cmd.charAt(j) == ')' || cmd.charAt(j) == ']' {
                 nbEncls--
@@ -54,54 +50,7 @@ main(args []cpstring) int {
             break
         }
 
-        if cmd.hasPrefix(".i ") || cmd.hasPrefix(".include ") {
-            parts = splitString(cmd, " ")
-            f = parts[1]
-            includes += "#include \"" + f.str() + "\"\n"
-        } else if cmd.str()[0] == '$' {
-            cmd.trimLeft(1)
-            id = strToInt(cmd.str())
-            if id < 0 && id >= i {
-                continue
-            }
-            compileCmd("fn_"+intToStr(id)+"()", i)
-        } else if isVarDecl(cmd) {
-            isFuncDecl = false
-            parts = string(splitStringBefore(cmd, "="))
-            name = trim(parts)
-            if name.count(".") {
-                name = string(splitStringBefore(name, "."))
-            }
-            if name.count("[") {
-                name = string(splitStringBefore(name, "["))
-            }
-
-            if name.hasPrefix("&") {
-                name.trimLeft(1)
-            }
-
-            j=0; for j < len(symsToSave), j++ {
-                v = symsToSave[j]
-                if v.name == name.str() {
-                    compileCmd(cmd.str(), i)
-                    break
-                }
-            }
-            if j < len(symsToSave) {
-                continue
-            }
-
-            symsToSave[len(symsToSave)] = new symMapper {
-                name: name.str()
-                p: null
-            }
-            currFile += cmd.str()+"\n"
-            compileCmd(cmd.str(), i)
-        } else {
-            compileCmd(cmd.str(), i)
-        }
-
-
+        parseCmd(&cmd, i)
 
     }
 

@@ -75,6 +75,8 @@ enclavers = []char{'(', ')', '{', '}', '[', ']'}
 syntaxes = []char{'!', '=', '|', <char>38, '%', '+', '-', '*', '/', ',', '<', '>', ':', <char>59, '^'}
                                     //&                                                    //;
 
+keywords = []cpstring{"if", "else", "for", "struct", "const", "return", "extend", "new", "break", "continue", "default", "switch", "case", "while", "typedef", "function", "async", "in", "chan", "map", "buffer", "capture", "then"}
+
 lexer(s cpstring, codeLength int) []Tok {
 
     tokens = []Tok
@@ -271,6 +273,10 @@ lexer(s cpstring, codeLength int) []Tok {
             currentType = TOKEN_TYPE_VAR
             
             memstr = arrAsStr(memory)
+
+            if memstr in keywords {
+                currentType = TOKEN_TYPE_KEYWORD
+            }
 
             tokens[len(tokens)] = makeToken(pos, pos - posOffset, lineNb, memory, currentType)
         }

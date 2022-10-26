@@ -1,0 +1,94 @@
+parseCmd(s string*, id int) {
+    tokens = lexer(s.str(), s.length)
+
+    if len(tokens) == 0 {
+        return
+    }
+
+    i=0; for i < len(tokens), i++ {
+        if tokens[i].ogCont == ";" {
+            println("[error]: multi-line operations are not supported.")
+            return
+        }
+    }
+
+    if tokens[0].ogCont == "." {
+        if len(tokens) < 2 {
+            return
+        }
+        if tokens[1].ogCont == "i" || tokens[1].ogCont == "include" {
+            f = ""
+            i=2; for i < len(tokens), i++ {
+                f += tokens[i].ogCont
+            }
+            includes += "#include \"" + f + "\"\n"
+        }
+        return
+    }
+
+    if tokens[0].ogCont == "#include" || tokens[0].ogCont == "#import" {
+        includes += "#include " + tokens[1].ogCont + "\n"
+        return
+    }
+
+    if s.charAt(0) == '$' {
+        if len(tokens) != 1 || tokens[0].type != TOKEN_TYPE_INT {
+            return
+        }
+        nb = strToInt(tokens[0].ogCont)
+        if nb < 0 || nb >= id {
+            return
+        }
+        compileCmd("fn_"+intToStr(nb)+"()", id)
+        return
+    }
+
+    if tokens[0].type == TOKEN_TYPE_VAR {
+        varDecl = true
+        funcDecl = false
+        i=1; for i < len(tokens), i++ {
+            if tokens[i].ogCont == "=" {
+                break
+            }
+            if tokens[i].ogCont == "(" {
+                varDecl = false
+                if tokens[len(tokens)-1].ogCont == "}" {
+                    funcDecl = true
+                    break
+                }
+            }
+        }
+
+        if varDecl == true {
+            vName = tokens[0].ogCont
+            if vName[0] == '&' {
+                vName = vName[1:]
+            }
+            j=0; for j < len(symsToSave), j++ {
+                v = symsToSave[j]
+                if v.name == vName {
+                    compileCmd(s.str(), id)
+                    break
+                }
+            }
+            if j < len(symsToSave) {
+                return
+            }
+            symsToSave[len(symsToSave)] = new symMapper {
+                name: vName
+                p: null
+            }
+            currFile += s.str()+"\n"
+            compileCmd(s.str(), id)
+            return
+        }
+        
+        if funcDecl == true {
+            isFuncDecl = true
+        }
+
+    }
+
+    compileCmd(s.str(), id)
+
+}

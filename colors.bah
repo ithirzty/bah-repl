@@ -1,5 +1,3 @@
-#include "lexer.bah" //Bah compiler's lexer
-
 //ASCII terminal sequences
 const asciiEscape = "\033["
 const asciiReset = "\033[m"
@@ -36,9 +34,6 @@ bahTypes = []cpstring{
 bahSpecialVals = []cpstring {
     "null"
 }
-
-//Bah keywords for syntax highlighting
-bahKeywords = []cpstring{"if", "else", "for", "struct", "const", "return", "extend", "new", "break", "continue", "default", "switch", "case", "while", "typedef", "function", "async", "in", "chan", "map", "buffer"}
 
 //Default colors (from bcat)
 defaultColor = rgbColor(218, 215, 218)
@@ -97,8 +92,6 @@ syntaxHighlight(s []char) cpstring {
                     color = typeColor
                 } else if inArrStr(tokens[k].ogCont, bahSpecialVals) {
                     color = constColor
-                } else if inArrStr(tokens[k].ogCont, bahKeywords) {
-                    color = kwColor
                 } else {
                     color = varColor
                 }
@@ -110,8 +103,13 @@ syntaxHighlight(s []char) cpstring {
                 color = numColor
             } else if tokens[k].type == TOKEN_TYPE_CAST {
                 color = typeColor
-            } else if tokens[k].type == TOKEN_TYPE_KEYWORD && tokens[k].ogCont[0] == '#' {
-                color = hashColor
+            } else if tokens[k].type == TOKEN_TYPE_KEYWORD {
+                color = kwColor
+                if tokens[k].ogCont[0] == '#' {
+                    color = rgbColor(255, 0, 0)
+                }
+            } else if tokens[k].ogCont == ";" {
+                color = rgbColor(255, 0, 0)
             }
             i += strlen(tokens[k].ogCont) - 1
             appendStr(buff, color+tokens[k].ogCont+defaultColor)
