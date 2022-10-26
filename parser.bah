@@ -88,7 +88,7 @@ parseCmd(s string*, id int) {
 
             //reset state
             currFile = ""
-            includes = ""
+            includes = "#include \"../runtime.bah\"\n"
             garbageFiles = listFiles("./tmp")
             i=0; for i < len(garbageFiles), i++ {
                 removeFile("./tmp/"+garbageFiles[i])
