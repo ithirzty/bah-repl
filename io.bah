@@ -47,7 +47,6 @@ compileCmd(code cpstring, id int) {
 
     fs.writeFile("
     "+includes+"
-    #cLib \"fpic\"
     main(args []cpstring) int {
         return 0
     }
@@ -59,7 +58,7 @@ compileCmd(code cpstring, id int) {
     command("bah ./tmp/tmp.bah -c").runBytes()
     print(".")
 
-    command("gcc -I \"/opt/bah/libs/linux/include/\" -L \"/opt/bah/libs/linux/\" -w ./tmp/tmp.c -c -O1 -fpic -o ./tmp/tmp.o").runBytes()
+    command("gcc -I \"/opt/bah/libs/linux/include/\" -L \"/opt/bah/libs/linux/\" -w ./tmp/tmp.c -c -O0 -fpic -o ./tmp/tmp.o").runBytes()
     print(".")
     
     command("gcc ./tmp/tmp.o -lgc -o ./tmp/tmp_"+intToStr(id)+".so -shared").runBytes()
@@ -148,7 +147,7 @@ getInputLine(info cpstring) cpstring {
     t.mode(0)
     padding = ""
     l = strlen(info)
-    historyIndex = len(history)-1
+    historyIndex = len(history)
     pos = 0
     t.forcePos(0, t.height-1)
     for 1==1 {
@@ -168,13 +167,14 @@ getInputLine(info cpstring) cpstring {
         } else if testKS(k, K_arr_top) || testKS(k, K_arr_bottom) {
             if testKS(k, K_arr_top) && historyIndex > 0 {
                 historyIndex--
-            } else if testKS(k, K_arr_bottom) && historyIndex < len(history)-1 {
+            } else if testKS(k, K_arr_bottom) && historyIndex+1 < len(history) {
                 historyIndex++
             }
             if len(history) == 0 {
                 continue
             }
             cmdRaw = strToArr(history[historyIndex])
+            pos = len(cmdRaw)
 
         } else if testKS(k, K_arr_left) {
             if pos > 0 {
