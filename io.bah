@@ -63,7 +63,7 @@ compileCmd(code cpstring, id int) {
 
     if bc.status != 0 {
         println("ERROR: compilling (1)...")
-        currFile = currFile[:strlen(currFile) - strlen(code)-1]
+        currFile = currFile[:len(currFile) - len(code)-1]
         return
     }
 
@@ -117,7 +117,7 @@ compileCmd(code cpstring, id int) {
 
         if sym == null {
             println("ERROR: compilling (2)...")
-            currFile = currFile[:strlen(currFile) - strlen(code)-1]
+            currFile = currFile[:len(currFile) - len(code)-1]
             return
         }
 
@@ -138,7 +138,7 @@ getInputLine(info cpstring) cpstring {
     padding = ""
     maxL = 0
     paddingOffset = 0
-    l = strlen(info)
+    l = len(info)
     historyIndex = len(history)
     pos = 0
     vertPos = 0

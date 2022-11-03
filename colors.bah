@@ -55,7 +55,7 @@ buff = []char
 //Returns colored text from bah code.
 syntaxHighlight(s []char) cpstring {
     clear(buff)
-    tokens = lexer(arrAsStr(s), len(s))
+    tokens = lexer(arrToStr(s), len(s))
 
     if len(s) > 0 && (s[0] == '.' || s[0] == '$') {
         appendStr(buff, lineColor)
@@ -79,7 +79,7 @@ syntaxHighlight(s []char) cpstring {
 
         if s[i] == '/' && i+1 < len(s) && s[i+1] == '/' {
             appendStr(buff, asciiBold + commColor)
-            appendStr(buff, arrAsStr(s[i:]))
+            appendStr(buff, arrToStr(s[i:]))
             appendStr(buff, asciiReset)
             break
         }
@@ -112,7 +112,7 @@ syntaxHighlight(s []char) cpstring {
             } else if tokens[k].ogCont == ";" {
                 color = rgbColor(255, 0, 0)
             }
-            i += strlen(tokens[k].ogCont) - 1
+            i += len(tokens[k].ogCont) - 1
             appendStr(buff, color+tokens[k].ogCont+defaultColor)
             continue
         }
