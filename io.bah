@@ -67,10 +67,10 @@ compileCmd(code cpstring, id int) {
         return
     }
 
-    command("gcc -I \"/opt/bah/libs/linux/include/\" -L \"/opt/bah/libs/linux/\" -w ./tmp/tmp.c -c -O0 -fpic -o ./tmp/tmp.o").runBytes()
+    command(CC+" -I \"/opt/bah/libs/linux/include/\" -L \"/opt/bah/libs/linux/\" -w ./tmp/tmp.c -c -O0 -fpic -o ./tmp/tmp.o").runBytes()
     print(".")
     
-    command("gcc ./tmp/tmp.o -lgc -o ./tmp/tmp_"+intToStr(id)+".so -shared").runBytes()
+    command(CC+" ./tmp/tmp.o -lgc -o ./tmp/tmp_"+intToStr(id)+".so -shared").runBytes()
     print(".\r")
         i=0; for i < len(so), i++ {
             cso = so[i]
@@ -132,6 +132,9 @@ compileCmd(code cpstring, id int) {
 
 //Used instead of stdinput() to be able to have syntax highlighting
 getInputLine(info cpstring) cpstring {
+    i=0; for i < len(cmdRaw), i++ {
+        cmdRaw[i] = null
+    }
     clear(cmdRaw)
     cmdRaw[0] = []char
     t.mode(0)

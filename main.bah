@@ -2,6 +2,7 @@
 #import "string.bah"
 #import "path.bah"
 #import "exec.bah"
+#import "flags.bah"
 
 globalID int*
 
@@ -14,11 +15,23 @@ cmdRaw = [][]char //current command buffer
 multiLine = false
 currentFile = []cpstring //for saving
 currentFileName = ""
+CC = "gcc"
 
 #include "io.bah" //io operations (compiling)
 #include "parser.bah"    //Bah compiler's lexer
 
 main(args []cpstring) int {
+    t.mode(1)
+    
+    flags = flags{}
+    flags.addString("CC", "C compiler (default: "+CC+").")
+    flags.parse(args)
+
+    if flags.isSet("CC") {
+        CC = flags.get("CC")
+    } else {
+
+    }
 
     mkdir("./tmp", 0777)
 
@@ -28,6 +41,7 @@ main(args []cpstring) int {
     
     globalID = &i
 
+    t.mode(0)
     for 1==1, i++ {
         info = "... > "
         if multiLine == false {
