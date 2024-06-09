@@ -5,12 +5,12 @@ const asciiBold = "\033[1m"
 const asciiUnderline = "\033[4m"
 
 //Used to set a rgb text color in the terminal
-rgbColor(r int, g int, b int) cpstring {
+rgbColor(r int, g int, b int) str {
     return asciiEscape+"38;2;"+intToStr(r)+";"+intToStr(g)+";"+intToStr(b)+"m"
 }
 
 //Used for appending a cpstring to an array
-appendStr(a []char, b cpstring) uint32 {
+appendStr(a []char, b str) uint32 {
     i=0; for b[i] != null, i++ {
         a[len(a)] = b[i]
     }
@@ -18,12 +18,12 @@ appendStr(a []char, b cpstring) uint32 {
 }
 
 //Because of the 'else if in' bug 
-inArrStr(s cpstring, arr []cpstring) bool {
+inArrStr(s str, arr []str) bool {
     return s in arr
 }
 
 //Primitives bah types for syntax highlighting
-bahTypes = []cpstring{
+bahTypes = []str{
     "int", "uint", "int32", "uint32", 
     "cpstring", "char",
     "float", "float32",
@@ -31,7 +31,7 @@ bahTypes = []cpstring{
 }
 
 //Special values that are not variables for syntax highlighting
-bahSpecialVals = []cpstring {
+bahSpecialVals = []str {
     "null"
 }
 
@@ -53,7 +53,7 @@ lineColor = rgbColor(90, 50, 50)
 buff = []char
 
 //Returns colored text from bah code.
-syntaxHighlight(s []char) cpstring {
+syntaxHighlight(s []char) str {
     clear(buff)
     tokens = lexer(arrToStr(s), len(s))
 

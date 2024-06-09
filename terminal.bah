@@ -44,8 +44,8 @@ struct term {
     posSet: bool = false
 
     //color
-    fg: cpstring
-    bg: cpstring
+    fg: str
+    bg: str
     colorSet: bool = false
 
     //Set cursor position on next print
@@ -55,7 +55,7 @@ struct term {
     }
 
     //Set text color
-    setColor(fg cpstring, bg cpstring) {
+    setColor(fg str, bg str) {
         this.fg = fg; this.bg = bg
         this.colorSet = false
     }
@@ -74,7 +74,7 @@ struct term {
     }
 
     //Print text
-    print(s cpstring) {
+    print(s str) {
         if this.posSet == false {
             s = "\033["+intToStr(this.y+1)+";"+intToStr(this.x+1)+"H"+s
             this.posSet = true
@@ -118,7 +118,7 @@ struct term {
 }
 
 //Set text color (old way)
-setColor(color cpstring, s cpstring) cpstring {
+setColor(color str, s str) str {
     return "\033["+color+"m" + s + "\033[0m"
 }
 

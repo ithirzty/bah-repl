@@ -2,13 +2,13 @@
 t = term()
 
 //Console text history (arrow up)
-history = []cpstring
+history = []str
 
 //Wrapper to a shared object for counting references (with symbols)
 //to be able to close them and save ressources.
 struct sharedObject {
     refs: int = 0
-    path: cpstring
+    path: str
     so: ptr
 }
 
@@ -20,7 +20,7 @@ currFile = ""
 
 //To map a name to a symbol (variable)
 struct symMapper {
-    name: cpstring
+    name: str
     scope: sharedObject*
     p: ptr*
 }
@@ -35,7 +35,7 @@ isFuncDecl = false //is current command a function declaration
 currFuncName = "" //not used for now
 
 //Used for compiling a command
-compileCmd(code cpstring, id int) {
+compileCmd(code str, id int) {
     fs = fileStream{}
     fs.open("./tmp/tmp.bah", "w")
     
@@ -49,27 +49,24 @@ compileCmd(code cpstring, id int) {
 
     fs.writeFile("
     "+includes+"
-    main(args []cpstring) int {
-        return 0
-    }
+    #cLib \"c\" \"O0\" \"fpic\"
     "+currFile+"
     
     ")
     fs.close()
 
-    bc = command("bah ./tmp/tmp.bah -c")
-    bc.runBytes()
+    // ide.run()
+
+    bc = command("bah ./tmp/tmp.bah -d -noImports -o ./tmp/tmp.o")
+    err = bc.runBytes()
     print(".")
 
     if bc.status != 0 {
-        println("ERROR: compilling (1)...")
+        println(arrToStr(err))
         currFile = currFile[:len(currFile) - len(code)-1]
         return
     }
 
-    command(CC+" -I \"/opt/bah/libs/linux/include/\" -L \"/opt/bah/libs/linux/\" -w ./tmp/tmp.c -c -O0 -fpic -o ./tmp/tmp.o").runBytes()
-    print(".")
-    
     command(CC+" ./tmp/tmp.o -lgc -o ./tmp/tmp_"+intToStr(id)+".so -shared").runBytes()
     print(".\r")
         i=0; for i < len(so), i++ {
@@ -90,7 +87,7 @@ compileCmd(code cpstring, id int) {
         so[len(so)] = currSo
     if so[len(so)-1].so == null {
         delete(so, len(so)-1)
-        println("ERROR: loading binary file.")
+        println("ERROR: loading binary file : "+dlerror())
         return
     }
     
@@ -128,10 +125,10 @@ compileCmd(code cpstring, id int) {
 }
 
 #define countEnclaves(s [][]char) int
-#define countFrom(s [][]char, s1 cpstring, s2 cpstring) int
+#define countFrom(s [][]char, s1 str, s2 str) int
 
 //Used instead of stdinput() to be able to have syntax highlighting
-getInputLine(info cpstring) cpstring {
+getInputLine(info str) str {
     i=0; for i < len(cmdRaw), i++ {
         cmdRaw[i] = null
     }
@@ -216,6 +213,10 @@ getInputLine(info cpstring) cpstring {
                 vertPos++
                 pos = 0
             }
+        // } else if testKS(k, K_tab) {
+            // res = autoComplete(cmdRaw[vertPos], pos)
+            // cmdRaw[vertPos] = res[0]
+            // pos = res[1]
         } else {
             if cmdRaw[vertPos] == null {
                 cmdRaw[vertPos] = []char

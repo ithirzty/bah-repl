@@ -2,7 +2,7 @@
 
 #cLib "ldl"
 
-#define! dlopen(s cpstring, m int) ptr
+#define! dlopen(s str, m int) ptr
 #define! dlsym(so ptr, sym ptr) ptr
-#define! dlerror() cpstring
+#define! dlerror() str
 #define! dlclose(so ptr)

@@ -20,8 +20,8 @@ const TOKEN_TYPE_CAST =    <tokenType>12
 
 //a token (the atomic unit for describing the inputed Bah file)
 struct Tok {
-    cont: cpstring = ""
-    ogCont: cpstring = ""
+    cont: str = ""
+    ogCont: str = ""
     type: tokenType = TOKEN_NO_TYPE
     pos: uint32 = 0
     linePos: uint32 = 0
@@ -37,17 +37,17 @@ inArray(needle char, arr []char) bool {
         if needle == arr[i] {
             return true
         }
-        i = i + 1
+        i++
     }
     return false
 }
 
-inArrayStr(needle cpstring, arr []cpstring) bool {
+inArrayStr(needle str, arr []str) bool {
     i=0; for i < len(arr) {
         if needle == arr[i] {
             return true
         }
-        i = i + 1
+        i++
     }
     return false
 }
@@ -75,9 +75,9 @@ enclavers = []char{'(', ')', '{', '}', '[', ']'}
 syntaxes = []char{'!', '=', '|', <char>38, '%', '+', '-', '*', '/', ',', '<', '>', ':', <char>59, '^'}
                                     //&                                                    //;
 
-keywords = []cpstring{"if", "else", "for", "struct", "const", "return", "extend", "new", "break", "continue", "default", "switch", "case", "while", "typedef", "function", "async", "in", "chan", "map", "buffer", "capture", "then"}
+keywords = []str{"if", "else", "for", "struct", "const", "return", "extend", "new", "break", "continue", "default", "switch", "case", "while", "typedef", "function", "async", "in", "chan", "map", "buffer", "capture", "then"}
 
-lexer(s cpstring, codeLength int) []Tok {
+lexer(s <any>, codeLength int) []Tok {
 
     tokens = []Tok
 
@@ -105,7 +105,7 @@ lexer(s cpstring, codeLength int) []Tok {
             pos = i
             begLine = lineNb
             memory[0] = c
-            i = i + 1
+            i++
             for i < codeLength, i++ {
                 c = s[i]
                 pc = s[i-1]
@@ -132,7 +132,7 @@ lexer(s cpstring, codeLength int) []Tok {
 
             memory[0] = c
             pos = i
-            i = i + 1
+            i++
             currentType = TOKEN_TYPE_INT
             isHex = false
             for i < codeLength, i++ {

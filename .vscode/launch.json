@@ -1,4 +1,5 @@
 //This launch.json file is made to work with extensions such as 'cdt-gdb-vscode'
+//It was generated automatically by the Bah extension.
 {
     "version": "0.2.0",
     "configurations": [
@@ -6,7 +7,8 @@
             "type": "gdb",
             "request": "launch",
             "name": "GDB (bah) launch",
-            "program": "${workspaceFolder}/.tmp_bah/debug"
+            "initCommands": ["handle SIGSEGV nostop"],
+            "program": "${workspaceFolder}/.vscode/debug"
         }
     ]
 }

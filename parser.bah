@@ -17,6 +17,7 @@ parseCmd(s string*, id int) {
                 f += tokens[i].ogCont
             }
             includes += "#include \"" + f + "\"\n"
+            compileCmd("", id)
         } else if tokens[1].ogCont == "s" || tokens[1].ogCont == "save" {
             currentFile[len(currentFile)-1] = ""
             if len(tokens) > 2 {
@@ -194,7 +195,7 @@ countEnclaves(s [][]char) int {
     return nbEncl
 }
 
-countFrom(s [][]char, s1 cpstring, s2 cpstring) int {
+countFrom(s [][]char, s1 str, s2 str) int {
     nbEncl = 0
     r = ""
     j=0; for j < len(cmdRaw), j++ {

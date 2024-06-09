@@ -3,6 +3,7 @@
 #import "path.bah"
 #import "exec.bah"
 #import "flags.bah"
+#import "json.bah"
 
 globalID int*
 
@@ -13,14 +14,23 @@ globalID int*
 
 cmdRaw = [][]char //current command buffer
 multiLine = false
-currentFile = []cpstring //for saving
+currentFile = []str //for saving
 currentFileName = ""
 CC = "gcc"
 
+// #include "ide.bah"
 #include "io.bah" //io operations (compiling)
 #include "parser.bah"    //Bah compiler's lexer
 
-main(args []cpstring) int {
+helpMsg = "
+List of commands:
+\t.q .quit\t\tInclude a file.
+\t.i .include\t\tQuit the program.
+\t.s .save <fileName>\tSave the current session.
+\t.o .open <fileName>\tOpen a session.
+"
+
+main(args []str) int {
     t.mode(1)
     
     flags = flags{}
@@ -29,8 +39,6 @@ main(args []cpstring) int {
 
     if flags.isSet("CC") {
         CC = flags.get("CC")
-    } else {
-
     }
 
     mkdir("./tmp", 0777)
@@ -42,6 +50,11 @@ main(args []cpstring) int {
     globalID = &i
 
     t.mode(0)
+
+    // isFuncDecl = true
+    // compileCmd("", -1)
+    // isFuncDecl = false
+
     for 1==1, i++ {
         info = "... > "
         if multiLine == false {
@@ -53,6 +66,8 @@ main(args []cpstring) int {
         
         if cmd.str() == ".q" || cmd.str() == ".quit" {
             break
+        } else if cmd.str() == ".h" || cmd.str() == ".help" || cmd.str() == "?" {
+            println(helpMsg)
         }
 
         currentFile[len(currentFile)] = cmd.str()
